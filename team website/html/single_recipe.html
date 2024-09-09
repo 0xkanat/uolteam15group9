@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Details</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .card {
+            border: none;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            border-radius: 1rem;
+        }
+        .recipe-image {
+            height: 250px;
+            background-size: cover;
+            background-position: center;
+            border-top-left-radius: 1rem;
+            border-top-right-radius: 1rem;
+        }
+        .time-badge {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 2rem;
+        }
+        .list-group-item {
+            border: none;
+            padding: 0.5rem 0;
+        }
+        .list-group-numbered > .list-group-item::before {
+            color: #6c757d;
+        }
+        .list-group-bulleted > .list-group-item::before {
+            content: "•";
+            color: #6c757d;
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+        }
+    </style>
+</head>
+<body class="container-fluid d-flex flex-column h-100">
+    <nav class="navbar navbar-light bg-light navbar-expand-lg">
+        <a class="navbar-brand" href="main.html">Recipe App</a>
+        <form class="d-flex ms-auto">
+            <input type="text" class="form-control" placeholder="Search">
+            <button type="submit" class="btn btn-danger">Submit</button>
+        </form>
+    </nav>
+    <div class="container py-5">
+        <div class="card mx-auto" style="max-width: 500px;">
+            <div id="recipeImage" class="recipe-image mb-4" style="display: none;"></div>
+            <div class="card-body px-4 pb-4">
+                <h2 id="recipeTitle" class="card-title fw-bold mb-3">Recipe Name</h2>
+                <div class="d-flex justify-content-start mb-4">
+                    <span class="badge bg-light text-dark time-badge me-2">
+                        <i class="bi bi-clock me-1"></i>Prep: <span id="prepTime"></span> | Cook: <span id="cookTime"></span>
+                    </span>
+                </div>
+                <div class="mb-4">
+                    <h3 class="fw-semibold mb-3 fs-5">Ingredients</h3>
+                    <ul id="recipeIngredients" class="list-group list-group-flush list-group-bulleted"></ul>
+                </div>
+                <div>
+                    <h3 class="fw-semibold mb-3 fs-5">Instructions</h3>
+                    <ol id="recipeInstructions" class="list-group list-group-numbered"></ol>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Function to get recipes from local storage
+        function getRecipes() {
+            const recipes = localStorage.getItem('recipes');
+            return recipes ? JSON.parse(recipes) : [];
+        }
+
+        // Function to get a recipe by ID
+        function getRecipeById(id) {
+            const recipes = getRecipes();
+            return recipes.find(recipe => recipe.id === id);
+        }
+
+        // Get the recipe ID from the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const recipeId = parseInt(urlParams.get('id'));
+
+        // Get the recipe details
+        const recipe = getRecipeById(recipeId);
+
+        // Display the recipe details
+        if (recipe) {
+            document.getElementById('recipeTitle').textContent = recipe.title;
+            document.getElementById('prepTime').textContent = recipe.prepTime;
+            document.getElementById('cookTime').textContent = recipe.cookTime;
+            document.getElementById('recipeIngredients').innerHTML = recipe.ingredients.split('\n').map(ingredient => `<li class="list-group-item">${ingredient}</li>`).join('');
+            document.getElementById('recipeInstructions').innerHTML = recipe.instructions.split('\n').map(instruction => `<li class="list-group-item">${instruction}</li>`).join('');
+
+            if (recipe.image) {
+                const recipeImage = document.getElementById('recipeImage');
+                recipeImage.style.backgroundImage = `url(${recipe.image})`;
+                recipeImage.style.display = 'block';
+            }
+        } else {
+            document.getElementById('recipeTitle').textContent = 'Recipe not found';
+        }
+    </script>
+    <footer class="footer mt-auto py-3 bg-body-tertiary">
+        <div class="bg-light text-lg-start text-center p-3">
+            <span class="text-body-secondary">&copy; 2024 Recipe App</span>
+        </div>
+    </footer>
+</body>
+</html>

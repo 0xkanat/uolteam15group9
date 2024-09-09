@@ -1,27 +1,200 @@
 <!DOCTYPE html>
-<html lang ="en" class="h-100">
+<html lang="en" class="h-100">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> what is the title???</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link href="../css/main.css" rel="stylesheet">
+    <title>Recipe App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .nutrition-container {
+            padding: 20px;
+        }
+        .nutrition-list {
+            margin-top: 20px;
+        }
+        .nutrition-item {
+            margin-bottom: 10px;
+        }
+        .card-view .card {
+            width: calc(50% - 1rem);
+            margin: 0.5rem;
+            height: 300px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .card-view .card:hover {
+            transform: scale(1.05);
+        }
+        .list-group-item {
+            transition: background-color 0.2s;
+        }
+        .list-group-item:hover {
+            background-color: #f8f9fa;
+        }
+        .img-fluid {
+            object-fit: cover;
+            aspect-ratio: 4 / 3;
+        }
+    </style>
 </head>
 <body class="container-fluid d-flex flex-column h-100">
     <nav class="navbar navbar-light bg-light navbar-expand-lg">
-       <a class="navbar-brand" href="##"> website name</a>
-            <form class="d-flex ms-auto">
-            <input type="text" class="form-control" placeholder="Search">
-         <button type="submit" class="btn btn-danger">submit</button>
+       <a class="navbar-brand" href="main.html">Recipe App</a>
+       <form class="d-flex ms-auto">
+           <input type="text" class="form-control" placeholder="Search">
+           <button type="submit" class="btn btn-danger">Submit</button>
        </form>
-
     </nav>
- 
-
-</body>
-<footer class="footer mt-auto py-3 bg-body-tertiary">
-    <div class="bg-light text-lg-start text-center p-3">
-      <span class="text-body-secondary">&copy; 2024 Your Website Name</span>
+    <div class="container nutrition-container">
+        <h2>Nutritional Analysis</h2>
+        <div class="d-flex justify-content-between mb-3">
+            <button class="btn btn-primary" onclick="openAddNutritionPage()">Add Nutrition Info</button>
+            <div class="d-flex align-items-start">
+                <button class="btn btn-outline-secondary me-2" id="listViewBtn" style="display: none;">List View</button>
+                <button class="btn btn-outline-secondary" id="cardViewBtn" style="display: none;">Card View</button>
+            </div>
+        </div>
+        <div id="nutritionList" class="nutrition-list">
+            <!-- Nutrition info will be dynamically added here -->
+        </div>
     </div>
-</footer>
+
+    <footer class="footer mt-auto py-3 bg-body-tertiary">
+        <div class="bg-light text-lg-start text-center p-3">
+            <span class="text-body-secondary">&copy; 2024 Recipe App</span>
+        </div>
+    </footer>
+
+    <script>
+        // Function to get recipes from local storage
+        function getRecipes() {
+            const recipes = localStorage.getItem('recipes');
+            return recipes ? JSON.parse(recipes) : [];
+        }
+
+        // Function to get nutrition info from local storage
+        function getNutritionInfo() {
+            const nutritionInfo = localStorage.getItem('nutritionInfo');
+            return nutritionInfo ? JSON.parse(nutritionInfo) : [];
+        }
+
+        // Function to save nutrition info to local storage
+        function saveNutritionInfo(nutritionInfo) {
+            localStorage.setItem('nutritionInfo', JSON.stringify(nutritionInfo));
+        }
+
+        // Function to render nutrition info in list view
+        function renderListView(nutritionInfo) {
+            const nutritionList = document.getElementById('nutritionList');
+            nutritionList.className = 'list-group';
+            nutritionList.innerHTML = '';
+            nutritionInfo.forEach(info => {
+                const nutritionItem = document.createElement('div');
+                nutritionItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+                nutritionItem.innerHTML = `
+                    <div>
+                        <h5>${info.recipeTitle}</h5>
+                        <ul>
+                            ${info.nutrition.map(n => `<li>${n.type}: ${n.value} ${n.unit}</li>`).join('')}
+                        </ul>
+                    </div>
+                    <div>
+                        <button class="btn btn-secondary btn-sm me-2" onclick="editNutrition(${info.recipeId})">Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteNutrition(${info.recipeId})">Delete</button>
+                    </div>
+                `;
+                nutritionList.appendChild(nutritionItem);
+            });
+        }
+
+        // Function to render nutrition info in card view
+        function renderCardView(nutritionInfo) {
+            const nutritionList = document.getElementById('nutritionList');
+            nutritionList.className = 'd-flex flex-wrap card-view';
+            nutritionList.innerHTML = '';
+            nutritionInfo.forEach(info => {
+                const recipe = getRecipes().find(r => r.id === info.recipeId);
+                const nutritionItem = document.createElement('div');
+                nutritionItem.className = 'card mb-3';
+                nutritionItem.innerHTML = `
+                    <div class="row g-0 h-100">
+                        <div class="col-md-4">
+                            <img src="${recipe.image}" class="img-fluid rounded-start h-100" alt="${info.recipeTitle}">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title">${info.recipeTitle}</h5>
+                                <ul>
+                                    ${info.nutrition.map(n => `<li>${n.type}: ${n.value} ${n.unit}</li>`).join('')}
+                                </ul>
+                                <div>
+                                    <button class="btn btn-secondary btn-sm me-2" onclick="editNutrition(${info.recipeId})">Edit</button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteNutrition(${info.recipeId})">Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                nutritionList.appendChild(nutritionItem);
+            });
+        }
+
+        // Function to delete nutrition info
+        function deleteNutrition(recipeId) {
+            let nutritionInfo = getNutritionInfo();
+            nutritionInfo = nutritionInfo.filter(info => info.recipeId !== recipeId);
+            saveNutritionInfo(nutritionInfo);
+            renderNutritionInfo();
+        }
+
+        // Function to edit nutrition info
+        function editNutrition(recipeId) {
+            window.location.href = `add_nutrition.html?id=${recipeId}`;
+        }
+
+        // Function to render nutrition info based on view preference
+        function renderNutritionInfo() {
+            const nutritionInfo = getNutritionInfo();
+            const viewPreference = getViewPreference();
+            if (viewPreference === 'list') {
+                renderListView(nutritionInfo);
+                document.getElementById('listViewBtn').style.display = 'none';
+                document.getElementById('cardViewBtn').style.display = 'inline-block';
+            } else {
+                renderCardView(nutritionInfo);
+                document.getElementById('listViewBtn').style.display = 'inline-block';
+                document.getElementById('cardViewBtn').style.display = 'none';
+            }
+        }
+
+        // Function to save view preference to local storage
+        function saveViewPreference(view) {
+            localStorage.setItem('viewPreference', view);
+        }
+
+        // Function to get view preference from local storage
+        function getViewPreference() {
+            return localStorage.getItem('viewPreference') || 'list';
+        }
+
+        // Event listeners for view buttons
+        document.getElementById('listViewBtn').addEventListener('click', function() {
+            saveViewPreference('list');
+            renderNutritionInfo();
+        });
+
+        document.getElementById('cardViewBtn').addEventListener('click', function() {
+            saveViewPreference('card');
+            renderNutritionInfo();
+        });
+
+        // Function to open the add nutrition page
+        function openAddNutritionPage() {
+            window.location.href = 'add_nutrition.html';
+        }
+
+        // Initial render
+        renderNutritionInfo();
+    </script>
+</body>
 </html>

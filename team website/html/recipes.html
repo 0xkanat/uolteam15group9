@@ -3,22 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recipe List</title>
+    <title>Recipe App</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="css/main.css" rel="stylesheet">
+    <style>
+        .card-view .card {
+            width: calc(50% - 1rem);
+            margin: 0.5rem;
+            height: 300px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .card-view .card:hover {
+            transform: scale(1.05);
+        }
+        .search-bar {
+            width: 300px;
+            height: 38px;
+        }
+        .card-body {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .list-group-item {
+            transition: background-color 0.2s;
+        }
+        .list-group-item:hover {
+            background-color: #f8f9fa;
+        }
+        .img-fluid {
+            object-fit: cover;
+            aspect-ratio: 4 / 3;
+        }
+    </style>
 </head>
 <body class="container-fluid d-flex flex-column h-100">
     <nav class="navbar navbar-light bg-light navbar-expand-lg">
-        <a class="navbar-brand" href="#">Website name</a>
-        <div class="ms-auto">
-            <a class="btn btn-primary" href="create recipes.html">Create/Edit Recipe</a>
-        </div>
+        <a class="navbar-brand" href="main.html">Recipe App</a>
     </nav>
 
     <!-- Main Content -->
     <div class="container mt-4">
         <h2>My Recipes</h2>
-        <input type="text" class="form-control mb-3" placeholder="Filter Options" id="filterInput">
+        <div class="d-flex justify-content-between mb-3">
+            <input type="text" class="form-control me-2 search-bar" placeholder="Search Recipes" id="filterInput">
+            <div class="d-flex align-items-start">
+                <a class="btn btn-primary me-2" href="create recipes.html">Create Recipe</a>
+                <button class="btn btn-outline-secondary me-2" id="listViewBtn" style="display: none;">List View</button>
+                <button class="btn btn-outline-secondary" id="cardViewBtn" style="display: none;">Card View</button>
+            </div>
+        </div>
 
         <div id="recipeList" class="list-group">
             <!-- Recipes will be dynamically added here -->
@@ -28,46 +63,137 @@
     <!-- Footer -->
     <footer class="footer mt-auto py-3 bg-body-tertiary">
         <div class="bg-light text-lg-start text-center p-3">
-          <span class="text-body-secondary">&copy; 2024 Your Website Name</span>
+          <span class="text-body-secondary">&copy; 2024 Recipe App</span>
         </div>
     </footer>
 
     <script>
-        const recipes = [
-            { title: 'Recipe 1', id: 1 },
-            { title: 'Recipe 2', id: 2 },
-            { title: 'Recipe 3', id: 3 },
-        ];
+        // Function to get recipes from local storage
+        function getRecipes() {
+            const recipes = localStorage.getItem('recipes');
+            return recipes ? JSON.parse(recipes) : [];
+        }
+
+        // Function to save recipes to local storage
+        function saveRecipes(recipes) {
+            localStorage.setItem('recipes', JSON.stringify(recipes));
+        }
+
+        // Function to save view preference to local storage
+        function saveViewPreference(view) {
+            localStorage.setItem('viewPreference', view);
+        }
+
+        // Function to get view preference from local storage
+        function getViewPreference() {
+            return localStorage.getItem('viewPreference') || 'list';
+        }
 
         const recipeList = document.getElementById('recipeList');
 
-        // Function to render recipes
-        function renderRecipes() {
+        // Function to render recipes in list view
+        function renderListView(recipes) {
+            recipeList.className = 'list-group';
             recipeList.innerHTML = '';
             recipes.forEach(recipe => {
-                const recipeItem = document.createElement('a');
-                recipeItem.href = `single_recipe.html?id=${recipe.id}`;
-                recipeItem.className = 'list-group-item list-group-item-action';
-                recipeItem.textContent = recipe.title;
+                const recipeItem = document.createElement('div');
+                recipeItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+                recipeItem.innerHTML = `
+                    <a href="single_recipe.html?id=${recipe.id}" class="flex-grow-1">${recipe.title}</a>
+                    <div>
+                        <button class="btn btn-secondary btn-sm me-2" onclick="editRecipe(event, ${recipe.id})">Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteRecipe(event, ${recipe.id})">Delete</button>
+                    </div>
+                `;
                 recipeList.appendChild(recipeItem);
             });
         }
 
-        renderRecipes();
+        // Function to render recipes in card view
+        function renderCardView(recipes) {
+            recipeList.className = 'd-flex flex-wrap card-view';
+            recipeList.innerHTML = '';
+            recipes.forEach(recipe => {
+                const recipeItem = document.createElement('div');
+                recipeItem.className = 'card mb-3';
+                recipeItem.onclick = () => window.location.href = `single_recipe.html?id=${recipe.id}`;
+                recipeItem.innerHTML = `
+                    <div class="row g-0 h-100">
+                        <div class="col-md-4">
+                            <img src="${recipe.image}" class="img-fluid rounded-start h-100" alt="${recipe.title}">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title">${recipe.title}</h5>
+                                <p class="card-text">Prep: ${recipe.prepTime} | Cook: ${recipe.cookTime}</p>
+                                <div>
+                                    <button class="btn btn-secondary btn-sm me-2" onclick="editRecipe(event, ${recipe.id})">Edit</button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteRecipe(event, ${recipe.id})">Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                recipeList.appendChild(recipeItem);
+            });
+        }
+
+        // Function to delete a recipe
+        function deleteRecipe(event, id) {
+            event.stopPropagation();
+            let recipes = getRecipes();
+            recipes = recipes.filter(recipe => recipe.id !== id);
+            saveRecipes(recipes);
+            renderRecipes();
+        }
+
+        // Function to edit a recipe
+        function editRecipe(event, id) {
+            event.stopPropagation();
+            window.location.href = `create recipes.html?id=${id}`;
+        }
+
+        // Function to render recipes based on view preference
+        function renderRecipes() {
+            const recipes = getRecipes();
+            const viewPreference = getViewPreference();
+            if (viewPreference === 'list') {
+                renderListView(recipes);
+                document.getElementById('listViewBtn').style.display = 'none';
+                document.getElementById('cardViewBtn').style.display = 'inline-block';
+            } else {
+                renderCardView(recipes);
+                document.getElementById('listViewBtn').style.display = 'inline-block';
+                document.getElementById('cardViewBtn').style.display = 'none';
+            }
+        }
+
+        // Event listeners for view buttons
+        document.getElementById('listViewBtn').addEventListener('click', function() {
+            saveViewPreference('list');
+            renderRecipes();
+        });
+
+        document.getElementById('cardViewBtn').addEventListener('click', function() {
+            saveViewPreference('card');
+            renderRecipes();
+        });
 
         // Filter recipes by title
         document.getElementById('filterInput').addEventListener('input', function() {
             const filterValue = this.value.toLowerCase();
+            const recipes = getRecipes();
             const filteredRecipes = recipes.filter(recipe => recipe.title.toLowerCase().includes(filterValue));
-            recipeList.innerHTML = '';
-            filteredRecipes.forEach(recipe => {
-                const recipeItem = document.createElement('a');
-                recipeItem.href = `single_recipe.html?id=${recipe.id}`;
-                recipeItem.className = 'list-group-item list-group-item-action';
-                recipeItem.textContent = recipe.title;
-                recipeList.appendChild(recipeItem);
-            });
+            const viewPreference = getViewPreference();
+            if (viewPreference === 'list') {
+                renderListView(filteredRecipes);
+            } else {
+                renderCardView(filteredRecipes);
+            }
         });
+
+        // Initial render
+        renderRecipes();
     </script>
 </body>
 </html>
